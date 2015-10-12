@@ -24,6 +24,11 @@ def get_model(X, y, lamb=0):
     n_col = X.shape[1]
     return np.linalg.lstsq(X.T.dot(X) + lamb * np.identity(n_col), X.T.dot(y))
 
+def get_model2(X, y, lamb=0):
+    n_col = X.shape[1]
+    return np.linalg.inv(X.T.dot(X) + lamb * np.identity(n_col)).dot(X.T).dot(y).T
+
+
 def predict(params, X):
 	return(X.dot(params))
 
@@ -42,14 +47,28 @@ def fit():
 	stds_train = np.std(train_features, axis=0)
 	train_features = normalised(train_features, means_train, stds_train)
 
-	# TODO: fit model
-	model = get_model(train_features, train_labels, lamb=0)
+	# Add bias term
+	bias = np.ones(shape=(train_raw.shape[0], 1))
+	train_features = np.concatenate((bias, train_features), axis=1)
+
+	lamb = 0
+
+	# Fit model
+	model = get_model(train_features, train_labels, lamb=lamb)
 	params = model[0]
 	predictions = np.round(predict(params, train_features))
 
-	print(np.concatenate((predictions, train_labels), axis=1))
+	# Calculate loss
+	errors = predictions - train_labels
+	loss = (errors.T.dot(errors) + lamb * params.T.dot(params))[0, 0]
 
-	# TODO: calculate accuracy
+	print("Training set:\n" + str(train_features))
+	print("Training set labels:\n" + str(train_labels))
+	print("Parameters:\n" + str(params))
+	print("Predictions:\n" + str(predictions))
+	print("Ground truth:\n" + str(train_labels))
+	print("Side-by-side:\n" + str(np.concatenate((predictions, train_labels), axis=1)))
+	print("Loss:\n" + str(loss))
 
 
 def test():
