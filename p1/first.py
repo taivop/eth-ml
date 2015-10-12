@@ -8,6 +8,14 @@ def write_output_file(ids, predictions, filename):
     array = np.concatenate((ids, predictions), axis=1)
     np.savetxt(filename, array, header= "Id,Delay", delimiter=",", fmt=["%d", "%d"])
 
+def write_parameters(params, filename):
+    """Write parameter array to file"""
+    np.savetxt(filename, params)
+
+def read_parameters(filename):
+    """Read parameter array from file"""
+    return np.genfromtxt(filename).reshape((-1,1))
+
 
 def normalised(data, means, stds):
     """For each column in array, move the means to 0 and divide by standard deviation."""
@@ -38,7 +46,7 @@ def predict(params, X):
 
 
 def fit():
-    """Fit one linear regression model and return loss."""
+    """Fit one linear regression model and return the model and loss."""
     # Read data file
     train_raw = np.genfromtxt('data/train.csv', delimiter=',')
     train_ids = train_raw[:, 0:1]
@@ -59,7 +67,7 @@ def fit():
     # Fit model
     model = get_model(train_features, train_labels, lamb=lamb)
     params = model[0]
-    predictions = np.round(predict(params, train_features))
+    predictions = predict(params, train_features)
 
     # Calculate loss
     errors = predictions - train_labels
@@ -74,6 +82,13 @@ def fit():
     print("Loss:\n" + str(loss))
 
     write_output_file(train_ids, predictions, "data/handin.txt")
+
+    write_parameters(params, "params/params1.txt")
+    params2 = read_parameters("params/params1.txt")
+    print(params2)
+    print(params)
+
+    return (model, loss)
 
 
 def test():
