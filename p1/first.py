@@ -21,6 +21,7 @@ def denormalised(data, means, stds):
 	return (data * stds_tiled + means_tiled)
 
 def get_model(X, y, lamb=0):
+	"""Fit a ridge regression model and return parameters."""
     n_col = X.shape[1]
     return np.linalg.lstsq(X.T.dot(X) + lamb * np.identity(n_col), X.T.dot(y))
 
@@ -30,12 +31,13 @@ def get_model2(X, y, lamb=0):
 
 
 def predict(params, X):
+	"""Predict y given X and parameters."""
 	return(X.dot(params))
 
 
 
 def fit():
-	"""Fit one linear regression model and return accuracy."""
+	"""Fit one linear regression model and return loss."""
 	# Read data file
 	train_raw = np.genfromtxt('data/train.csv', delimiter=',')
 	train_ids = train_raw[:, 0:1]
