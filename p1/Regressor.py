@@ -1,14 +1,17 @@
 import numpy as np
+import math
 
 
 class Regressor:
     means = None
     stds = None
+    training_set_row_count = 0
 
     def __init__(self, filename_training_data):
 
         # Read in training data and separate appropriately
         self.train_raw = np.genfromtxt(filename_training_data, delimiter=',')
+        self.training_set_row_count = self.train_raw.shape[0]
         self.train_ids = self.train_raw[:, 0:1]
         self.train_features = self.train_raw[:, 1:-1]
         self.train_labels = self.train_raw[:, -1:self.train_raw.shape[1]]
@@ -62,38 +65,76 @@ class Regressor:
         """Predict y given X and parameters."""
         return X.dot(params)
 
+    def cv_separate_data(self, test_inds):
+        """Separate data into test and train set for cross-validation."""
+        test_start, test_end = test_inds
 
-    def fit(self):
-        """Fit one linear regression model and return the model and loss."""
+        test_features = self.train_features[test_start:test_end, :]
+        test_labels = self.train_labels[test_start:test_end, :]
+        train_features = np.concatenate((self.train_features[0:test_start, :],
+                                         self.train_features[test_end:self.train_features.shape[0], :]
+                                         ), axis=0)
+        train_labels = np.concatenate((self.train_labels[0:test_start, :],
+                                       self.train_labels[test_end:self.train_labels.shape[0], :]
+                                       ), axis=0)
 
-        lamb = 0
+        return train_features, train_labels, test_features, test_labels
+
+
+    def fit(self, subslice, lamb=0):
+        """Fit one linear regression model using rows given in row_inds and return the model and loss."""
+
+        # Get data
+        row_start, row_end = subslice
+        train_features, train_labels, test_features, test_labels = self.cv_separate_data(subslice)
 
         # Fit model
-        model = self.get_model(self.train_features, self.train_labels, lamb=lamb)
+        model = self.get_model(train_features,
+                               train_labels,
+                               lamb=lamb)
         params = model[0]
-        predictions = self.predict(params, self.train_features)
+        predictions = self.predict(params, test_features)
 
         # Calculate loss
-        errors = predictions - self.train_labels
+        errors = predictions - test_labels
         loss = (errors.T.dot(errors) + lamb * params.T.dot(params))[0, 0]
+        rmse = math.sqrt(errors.T.dot(errors) / errors.shape[0])
 
-        print("Training set:\n" + str(self.train_features))
-        print("Training set labels:\n" + str(self.train_labels))
-        print("Parameters:\n" + str(params))
-        print("Predictions:\n" + str(predictions))
-        print("Ground truth:\n" + str(self.train_labels))
-        print("Side-by-side:\n" + str(np.concatenate((predictions, self.train_labels), axis=1)))
-        print("Loss:\n" + str(loss))
+        # print("Training set:\n" + str(self.train_features))
+        # print("Training set labels:\n" + str(self.train_labels))
+        # print("Parameters:\n" + str(params))
+        # print("Predictions:\n" + str(predictions))
+        # print("Ground truth:\n" + str(self.train_labels))
+        # print("Side-by-side:\n" + str(np.concatenate((predictions, self.train_labels), axis=1)))
+        print("RMSE: " + str(int(rmse)) + "\t\tLoss: " + str(int(loss)))
 
-        return model, loss
+        return model, rmse
+
+    def cross_validate(self, cv_count):
+        """Train cv_count models and test by partitioning the dataset into cv_count slices."""
+        for i in range(0, cv_count):
+            # Slice training set
+            slice_size = self.training_set_row_count / cv_count
+            slice_start = i * slice_size
+            slice_end = (i + 1) * slice_size
+            if i == cv_count - 1:
+                slice_end = self.training_set_row_count
+
+            # Fit model
+            print("Cross-validation: slice %d of %d (%d rows in test)." % (i+1, cv_count, slice_end-slice_start))
+            model, rmse = self.fit((slice_start, slice_end))
+
+            # Calculate
 
     def predict_on_testset(self, model, file_in, file_out):
         """Given a testset file, generate the corresponding predictions file."""
 
 
+
     def test(self):
         """Test stuff"""
-        self.fit()
+        # self.fit((1, 600))
+        self.cross_validate(5)
 
 
 Regressor('data/train.csv').test()
