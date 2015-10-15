@@ -84,12 +84,24 @@ def fit():
     write_output_file(train_ids, predictions, "data/handin.txt")
 
     write_parameters(params, "params/params1.txt")
-    params2 = read_parameters("params/params1.txt")
-    print(params2)
-    print(params)
 
     return (model, loss)
 
+
+def predict_on_testset(model, file_in, file_out):
+    """Given a testset file, generate the corresponding predictions file."""
+
+    # Read data in
+    raw = np.genfromtxt('data/train.csv', delimiter=',')
+    features = raw[:, 1:]
+    ids = raw[:, 0:1]
+
+    # Normalise data
+
+    # Predict
+    
+
+    # Write predictions to file
 
 def test():
     """Test stuff"""
