@@ -8,7 +8,7 @@ class Regressor:
     training_set_row_count = 0
 
     def __init__(self, filename_training_data):
-        np.random.seed(42)
+        #np.random.seed(42)
 
         # Read in training data and separate appropriately
         self.train_raw = np.genfromtxt(filename_training_data, delimiter=',')
@@ -21,17 +21,20 @@ class Regressor:
         # Normalise features
         self.means = np.mean(self.train_features, axis=0)
         self.stds = np.std(self.train_features, axis=0)
-        train_features = self.normalised(self.train_features)
+        self.train_features = self.normalised(self.train_features)
 
         # Add bias term
         bias = np.ones(shape=(self.train_raw.shape[0], 1))
-        train_features = np.concatenate((bias, train_features), axis=1)
+        self.train_features = np.concatenate((bias, self.train_features), axis=1)
 
     def write_output_file(self, ids, predictions, filename):
         """Write given id-s and predictions to filename with headers."""
-        assert(ids.shape[1] == predictions.shape[1])
-        array = np.concatenate((ids, predictions), axis=1)
-        np.savetxt(filename, array, header= "Id,Delay", delimiter=",", fmt=["%d", "%d"])
+        assert(ids.shape[0] == predictions.shape[0])
+        f = open(filename, 'w')
+        f.write("Id,Delay")
+        for i in range(0, predictions.shape[0]):
+            f.write("%d,%d" % (ids[i], predictions[i]))
+        f.close()
 
     def write_parameters(self, params, filename):
         """Write parameter array to file"""
@@ -108,7 +111,7 @@ class Regressor:
         # print("Side-by-side:\n" + str(np.concatenate((predictions, self.train_labels), axis=1)))
         print("RMSE: " + str(int(rmse)) + "\t\tLoss: " + str(int(loss)))
 
-        return model, rmse, loss
+        return params, rmse, loss
 
     def cross_validate(self, cv_count):
         """Train cv_count models and test by partitioning the dataset into cv_count slices."""
@@ -118,7 +121,7 @@ class Regressor:
         best_model = None
         best_slice = None
 
-        lambs = [0, 1, 100, 1000, 10000, 100000, 1000000]
+        lambs = [0.0] * cv_count #[0.01, 0.1, 0.2, 1, 10, 100, 1000]
 
         for i in range(0, cv_count):
             lamb = lambs[i]
@@ -131,7 +134,7 @@ class Regressor:
                 slice_end = self.training_set_row_count
 
             # Fit model
-            print("Cross-validation: slice %d of %d (%d rows in test)." % (i, cv_count, slice_end-slice_start))
+            print("Cross-validation: slice %d of %d (lamb=%.3f)." % (i, cv_count, lamb))
             model, rmse, loss = self.fit((slice_start, slice_end), lamb=lamb)
 
             # Check if current model is better than previous best
@@ -143,15 +146,35 @@ class Regressor:
 
         print("CV result: slice %d with RMSE %d and lambda %d." % (best_slice, best_rmse, lambs[best_slice]))
 
-    def predict_on_testset(self, model, file_in, file_out):
-        """Given a testset file, generate the corresponding predictions file."""
+        return best_model
 
+    def predict_on_testset(self, params, file_in, file_out):
+        """Given a testset file, generate the corresponding predictions file."""
+        # Read data in
+        raw = np.genfromtxt(file_in, delimiter=',')
+        ids = raw[:, 0:1]
+        features = raw[:, 1:]
+
+        # Normalise data
+        features = self.normalised(features)
+
+        # Add bias term
+        bias = np.ones(shape=(features.shape[0], 1))
+        features = np.concatenate((bias, features), axis=1)
+
+        # Predict
+        predictions = self.predict(params, features)
+
+        # Write output
+        self.write_output_file(ids, predictions, file_out)
 
 
     def test(self):
         """Test stuff"""
         # self.fit((1, 600))
-        self.cross_validate(5)
+        params = self.cross_validate(5)
+        self.predict_on_testset(params, 'data/validate_and_test.csv', 'validate_and_test.out')
+
 
 
 Regressor('data/train.csv').test()
