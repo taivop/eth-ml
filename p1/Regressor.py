@@ -60,7 +60,6 @@ class Regressor:
         n_col = X.shape[1]
         return np.linalg.inv(X.T.dot(X) + lamb * np.identity(n_col)).dot(X.T).dot(y).T
 
-
     def predict(self, params, X):
         """Predict y given X and parameters."""
         return X.dot(params)
@@ -80,7 +79,6 @@ class Regressor:
 
         return train_features, train_labels, test_features, test_labels
 
-
     def fit(self, subslice, lamb=0):
         """Fit one linear regression model using rows given in row_inds and return the model and loss."""
 
@@ -97,7 +95,7 @@ class Regressor:
 
         # Calculate loss
         errors = predictions - test_labels
-        loss = (errors.T.dot(errors) + lamb * params.T.dot(params))[0, 0]
+        loss = (errors.T.dot(errors) + lamb * params.T.dot(params))[0, 0] / errors.shape[0]
         rmse = math.sqrt(errors.T.dot(errors) / errors.shape[0])
 
         # print("Training set:\n" + str(self.train_features))
@@ -108,11 +106,21 @@ class Regressor:
         # print("Side-by-side:\n" + str(np.concatenate((predictions, self.train_labels), axis=1)))
         print("RMSE: " + str(int(rmse)) + "\t\tLoss: " + str(int(loss)))
 
-        return model, rmse
+        return model, rmse, loss
 
     def cross_validate(self, cv_count):
         """Train cv_count models and test by partitioning the dataset into cv_count slices."""
+
+        best_loss = float('inf')
+        best_rmse = None
+        best_model = None
+        best_slice = None
+
+        lambs = [0, 1, 100, 1000, 10000, 100000, 1000000]
+
         for i in range(0, cv_count):
+            lamb = lambs[i]
+
             # Slice training set
             slice_size = self.training_set_row_count / cv_count
             slice_start = i * slice_size
@@ -121,10 +129,17 @@ class Regressor:
                 slice_end = self.training_set_row_count
 
             # Fit model
-            print("Cross-validation: slice %d of %d (%d rows in test)." % (i+1, cv_count, slice_end-slice_start))
-            model, rmse = self.fit((slice_start, slice_end))
+            print("Cross-validation: slice %d of %d (%d rows in test)." % (i, cv_count, slice_end-slice_start))
+            model, rmse, loss = self.fit((slice_start, slice_end), lamb=lamb)
 
-            # Calculate
+            # Check if current model is better than previous best
+            if(loss < best_loss):
+                best_loss = loss
+                best_rmse = rmse
+                best_model = model
+                best_slice = i
+
+        print("CV result: slice %d with RMSE %d and lambda %d." % (best_slice, best_rmse, lambs[best_slice]))
 
     def predict_on_testset(self, model, file_in, file_out):
         """Given a testset file, generate the corresponding predictions file."""
