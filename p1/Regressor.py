@@ -8,9 +8,11 @@ class Regressor:
     training_set_row_count = 0
 
     def __init__(self, filename_training_data):
+        np.random.seed(42)
 
         # Read in training data and separate appropriately
         self.train_raw = np.genfromtxt(filename_training_data, delimiter=',')
+        np.random.shuffle(self.train_raw)
         self.training_set_row_count = self.train_raw.shape[0]
         self.train_ids = self.train_raw[:, 0:1]
         self.train_features = self.train_raw[:, 1:-1]
