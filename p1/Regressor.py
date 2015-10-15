@@ -31,9 +31,9 @@ class Regressor:
         """Write given id-s and predictions to filename with headers."""
         assert(ids.shape[0] == predictions.shape[0])
         f = open(filename, 'w')
-        f.write("Id,Delay")
+        f.write("Id,Delay\n")
         for i in range(0, predictions.shape[0]):
-            f.write("%d,%d" % (ids[i], predictions[i]))
+            f.write("%d,%d\n" % (ids[i], predictions[i]))
         f.close()
 
     def write_parameters(self, params, filename):
@@ -69,22 +69,27 @@ class Regressor:
         """Predict y given X and parameters."""
         return X.dot(params)
 
-    def cv_separate_data(self, test_inds):
-        """Separate data into test and train set for cross-validation."""
-        test_start, test_end = test_inds
+    def fit(self, lamb=0):
+        """Fit one linear regression model using all rows and return the model and loss."""
 
-        test_features = self.train_features[test_start:test_end, :]
-        test_labels = self.train_labels[test_start:test_end, :]
-        train_features = np.concatenate((self.train_features[0:test_start, :],
-                                         self.train_features[test_end:self.train_features.shape[0], :]
-                                         ), axis=0)
-        train_labels = np.concatenate((self.train_labels[0:test_start, :],
-                                       self.train_labels[test_end:self.train_labels.shape[0], :]
-                                       ), axis=0)
+        # Fit model
+        model = self.get_model(self.train_features,
+                               self.train_labels,
+                               lamb=lamb)
+        params = model[0]
+        predictions = self.predict(params, self.train_features)
 
-        return train_features, train_labels, test_features, test_labels
+        # Calculate loss
+        errors = predictions - self.train_labels
+        loss = (errors.T.dot(errors) + lamb * params.T.dot(params))[0, 0] / errors.shape[0]
+        rmse = math.sqrt(errors.T.dot(errors) / errors.shape[0])
 
-    def fit(self, subslice, lamb=0):
+        print("Lambda: " + str(lamb))
+        print("RMSE: " + str(int(rmse)) + "\t\tLoss: " + str(int(loss)))
+
+        return params, rmse, loss
+
+    def cv_fit(self, subslice, lamb=0):
         """Fit one linear regression model using rows given in row_inds and return the model and loss."""
 
         # Get data
@@ -109,11 +114,27 @@ class Regressor:
         # print("Predictions:\n" + str(predictions))
         # print("Ground truth:\n" + str(self.train_labels))
         # print("Side-by-side:\n" + str(np.concatenate((predictions, self.train_labels), axis=1)))
+        print("Lambda: " + str(lamb))
         print("RMSE: " + str(int(rmse)) + "\t\tLoss: " + str(int(loss)))
 
         return params, rmse, loss
 
-    def cross_validate(self, cv_count):
+    def cv_separate_data(self, test_inds):
+        """Separate data into test and train set for cross-validation."""
+        test_start, test_end = test_inds
+
+        test_features = self.train_features[test_start:test_end, :]
+        test_labels = self.train_labels[test_start:test_end, :]
+        train_features = np.concatenate((self.train_features[0:test_start, :],
+                                         self.train_features[test_end:self.train_features.shape[0], :]
+                                         ), axis=0)
+        train_labels = np.concatenate((self.train_labels[0:test_start, :],
+                                       self.train_labels[test_end:self.train_labels.shape[0], :]
+                                       ), axis=0)
+
+        return train_features, train_labels, test_features, test_labels
+
+    def cross_validate(self, cv_count, lamb):
         """Train cv_count models and test by partitioning the dataset into cv_count slices."""
 
         best_loss = float('inf')
@@ -121,10 +142,9 @@ class Regressor:
         best_model = None
         best_slice = None
 
-        lambs = [0.0] * cv_count #[0.01, 0.1, 0.2, 1, 10, 100, 1000]
+        rmses = []
 
         for i in range(0, cv_count):
-            lamb = lambs[i]
 
             # Slice training set
             slice_size = self.training_set_row_count / cv_count
@@ -134,8 +154,9 @@ class Regressor:
                 slice_end = self.training_set_row_count
 
             # Fit model
-            print("Cross-validation: slice %d of %d (lamb=%.3f)." % (i, cv_count, lamb))
-            model, rmse, loss = self.fit((slice_start, slice_end), lamb=lamb)
+            #print("Cross-validation: slice %d of %d (lamb=%.3f)." % (i, cv_count, lamb))
+            model, rmse, loss = self.cv_fit((slice_start, slice_end), lamb=lamb)
+            rmses.append(rmse)
 
             # Check if current model is better than previous best
             if(loss < best_loss):
@@ -144,7 +165,8 @@ class Regressor:
                 best_model = model
                 best_slice = i
 
-        print("CV result: slice %d with RMSE %d and lambda %d." % (best_slice, best_rmse, lambs[best_slice]))
+        #print("CV result: slice %d with RMSE %d and lambda %d." % (best_slice, best_rmse, lamb))
+        print("CV result: mean RMSE %d." % (sum(rmses)/len(rmses)))
 
         return best_model
 
@@ -171,9 +193,18 @@ class Regressor:
 
     def test(self):
         """Test stuff"""
-        # self.fit((1, 600))
-        params = self.cross_validate(5)
-        self.predict_on_testset(params, 'data/validate_and_test.csv', 'validate_and_test.out')
+        # for lamb in [0, 0.01, 0.1, 3, 4.5, 6, 7.5, 10, 30, 100]:
+        #     print("---- LAMBDA = %.3f ----" % (lamb))
+        #     params = self.cross_validate(20, lamb)
+
+        params = self.fit(lamb=6)[0]
+        predictions = self.predict(params, self.train_features)
+
+        # Calculate loss
+        errors = predictions - self.train_labels
+        rmse = math.sqrt(errors.T.dot(errors) / errors.shape[0])
+        print(rmse)
+        self.predict_on_testset(params, 'data/validate_and_test.csv', 'predictions/validate_and_test.out')
 
 
 
