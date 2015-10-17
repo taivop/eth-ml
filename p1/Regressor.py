@@ -35,6 +35,8 @@ class Regressor:
         logarithms = np.log(features + 1)
         #powers = np.power(np.ones(shape=features.shape) * 2, features)
         sqrts = np.sqrt(features)
+        poly3 = np.power(features, 3)
+        poly4 = np.power(features, 4)
 
         num_original_features = features.shape[1]
         polynomials = np.zeros(shape=(features.shape[0], num_original_features ** 2))
@@ -133,8 +135,8 @@ class Regressor:
         # print("Predictions:\n" + str(predictions))
         # print("Ground truth:\n" + str(self.train_labels))
         # print("Side-by-side:\n" + str(np.concatenate((predictions, self.train_labels), axis=1)))
-        print("Lambda: " + str(lamb))
-        print("RMSE: " + str(int(rmse)) + "\t\tLoss: " + str(int(loss)))
+        # print("Lambda: " + str(lamb))
+        # print("RMSE: " + str(int(rmse)) + "\t\tLoss: " + str(int(loss)))
 
         return params, rmse, loss
 
@@ -212,14 +214,14 @@ class Regressor:
         # Write output
         self.write_output_file(ids, predictions, file_out)
 
-
     def test(self):
         """Test stuff"""
-        # for lamb in [0, 0.01, 0.1, 3, 4.5, 6, 7.5, 10, 30, 100]:
-        #     print("---- LAMBDA = %.3f ----" % (lamb))
-        #     params = self.cross_validate(20, lamb)
+        for lamb in [0.001, 0.01, 0.03, 0.06, 0.1, 0.2, 0.5, 1, 3, 6, 10, 30, 100, 300, 1000]:
+            print("---- LAMBDA = %.3f ----" % (lamb))
+            params = self.cross_validate(2, lamb)
 
-        params = self.fit(lamb=6)[0]
+    def run(self):
+        params = self.fit(lamb=10)[0]
         predictions = self.predict(params, self.train_features)
 
         # Calculate loss
@@ -229,6 +231,5 @@ class Regressor:
         self.predict_on_testset(params, 'data/validate_and_test.csv', 'predictions/validate_and_test.out')
 
 
-# mat = [[1, 2],[1, 1],[0, 1]]
-# print(Regressor('data/train.csv').add_nonlinear_features(np.asarray(mat)))
 Regressor('data/train.csv').test()
+# Regressor('data/train.csv').run()
