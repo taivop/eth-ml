@@ -18,6 +18,9 @@ class Regressor:
         self.train_features = self.train_raw[:, 1:-1]
         self.train_labels = self.train_raw[:, -1:self.train_raw.shape[1]]
 
+        # Add nonlinear features
+        self.train_features = self.add_nonlinear_features(self.train_features)
+
         # Normalise features
         self.means = np.mean(self.train_features, axis=0)
         self.stds = np.std(self.train_features, axis=0)
@@ -30,7 +33,7 @@ class Regressor:
     def add_nonlinear_features(self, features):
         """Calculate some additional features and return the original features concatenated with the new ones."""
         logarithms = np.log(features + 1)
-        powers = np.power(np.ones(shape=features.shape) * 2, features)
+        #powers = np.power(np.ones(shape=features.shape) * 2, features)
         sqrts = np.sqrt(features)
 
         num_original_features = features.shape[1]
@@ -41,7 +44,7 @@ class Regressor:
                 feature2 = features[:, j]
                 polynomials[:, i * num_original_features + j] = np.multiply(feature1, feature2)
 
-        return(np.concatenate((features, logarithms, powers, sqrts, polynomials), axis=1))
+        return(np.concatenate((features, logarithms, sqrts, polynomials), axis=1))
 
     def write_output_file(self, ids, predictions, filename):
         """Write given id-s and predictions to filename with headers."""
@@ -193,6 +196,9 @@ class Regressor:
         ids = raw[:, 0:1]
         features = raw[:, 1:]
 
+        # Add nonlinear features
+        features = self.add_nonlinear_features(features)
+
         # Normalise data
         features = self.normalised(features)
 
@@ -223,8 +229,6 @@ class Regressor:
         self.predict_on_testset(params, 'data/validate_and_test.csv', 'predictions/validate_and_test.out')
 
 
-mat = [[1, 2],
-       [1, 1],
-       [0, 1]]
-print(Regressor('data/train.csv').add_nonlinear_features(np.asarray(mat)))
-#Regressor('data/train.csv').test()
+# mat = [[1, 2],[1, 1],[0, 1]]
+# print(Regressor('data/train.csv').add_nonlinear_features(np.asarray(mat)))
+Regressor('data/train.csv').test()
