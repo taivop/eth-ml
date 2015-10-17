@@ -27,6 +27,22 @@ class Regressor:
         bias = np.ones(shape=(self.train_raw.shape[0], 1))
         self.train_features = np.concatenate((bias, self.train_features), axis=1)
 
+    def add_nonlinear_features(self, features):
+        """Calculate some additional features and return the original features concatenated with the new ones."""
+        logarithms = np.log(features + 1)
+        powers = np.power(np.ones(shape=features.shape) * 2, features)
+        sqrts = np.sqrt(features)
+
+        num_original_features = features.shape[1]
+        polynomials = np.zeros(shape=(features.shape[0], num_original_features ** 2))
+        for i in range(0, num_original_features):
+            for j in range(0, num_original_features):
+                feature1 = features[:, i]
+                feature2 = features[:, j]
+                polynomials[:, i * num_original_features + j] = np.multiply(feature1, feature2)
+
+        return(np.concatenate((features, logarithms, powers, sqrts, polynomials), axis=1))
+
     def write_output_file(self, ids, predictions, filename):
         """Write given id-s and predictions to filename with headers."""
         assert(ids.shape[0] == predictions.shape[0])
@@ -207,5 +223,8 @@ class Regressor:
         self.predict_on_testset(params, 'data/validate_and_test.csv', 'predictions/validate_and_test.out')
 
 
-
-Regressor('data/train.csv').test()
+mat = [[1, 2],
+       [1, 1],
+       [0, 1]]
+print(Regressor('data/train.csv').add_nonlinear_features(np.asarray(mat)))
+#Regressor('data/train.csv').test()
