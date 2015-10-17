@@ -77,14 +77,22 @@ class Regressor:
         stds_tiled = np.tile(self.stds, (data.shape[0], 1))
         return (data * stds_tiled + means_tiled)
 
-    def get_model(self, X, y, lamb=0):
+    def get_params(self, X, y, lamb=0):
         """Fit a ridge regression model and return parameters."""
         n_col = X.shape[1]
-        return np.linalg.lstsq(X.T.dot(X) + lamb * np.identity(n_col), X.T.dot(y))
+        return np.linalg.lstsq(X.T.dot(X) + lamb * np.identity(n_col), X.T.dot(y))[0]
 
-    def get_model2(self, X, y, lamb=0):
+    def get_params2(self, X, y, lamb=0):
         n_col = X.shape[1]
-        return np.linalg.inv(X.T.dot(X) + lamb * np.identity(n_col)).dot(X.T).dot(y).T
+        model = np.linalg.inv(X.T.dot(X) + lamb * np.identity(n_col)).dot(X.T).dot(y).T
+        arr = np.zeros(shape=(model[0].shape[0], 1))
+        arr[:,0] = model[0]
+        return np.reshape(model[0], newshape=(model[0].shape[0], 1))
+
+    def get_params_lasso(self, X, y, lamb=0):
+        """Fit a LASSO regression model and return parameters."""
+        n_col = X.shape[1]
+        return np.linalg.lstsq(X.T.dot(X) + lamb * np.identity(n_col), X.T.dot(y))
 
     def predict(self, params, X):
         """Predict y given X and parameters."""
@@ -94,10 +102,9 @@ class Regressor:
         """Fit one linear regression model using all rows and return the model and loss."""
 
         # Fit model
-        model = self.get_model(self.train_features,
+        params = self.get_params(self.train_features,
                                self.train_labels,
                                lamb=lamb)
-        params = model[0]
         predictions = self.predict(params, self.train_features)
 
         # Calculate loss
@@ -118,10 +125,9 @@ class Regressor:
         train_features, train_labels, test_features, test_labels = self.cv_separate_data(subslice)
 
         # Fit model
-        model = self.get_model(train_features,
+        params = self.get_params(train_features,
                                train_labels,
                                lamb=lamb)
-        params = model[0]
         predictions = self.predict(params, test_features)
 
         # Calculate loss
@@ -230,6 +236,6 @@ class Regressor:
         print(rmse)
         self.predict_on_testset(params, 'data/validate_and_test.csv', 'predictions/validate_and_test.out')
 
-
-Regressor('data/train.csv').test()
-# Regressor('data/train.csv').run()
+# TODO Print coefficients or plot distribution!
+# Regressor('data/train.csv').test()
+Regressor('data/train.csv').run()
