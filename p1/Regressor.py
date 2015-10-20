@@ -1,5 +1,6 @@
 import numpy as np
 import math
+from sklearn import linear_model
 
 
 class Regressor:
@@ -34,6 +35,7 @@ class Regressor:
         """Calculate some additional features and return the original features concatenated with the new ones."""
         logarithms = np.log(features + 1)
         #powers = np.power(np.ones(shape=features.shape) * 2, features)
+        xlogx = np.multiply(features, logarithms)
         sqrts = np.sqrt(features)
         poly3 = np.power(features, 3)
         poly4 = np.power(features, 4)
@@ -46,7 +48,7 @@ class Regressor:
                 feature2 = features[:, j]
                 polynomials[:, i * num_original_features + j] = np.multiply(feature1, feature2)
 
-        return(np.concatenate((features, logarithms, sqrts, polynomials), axis=1))
+        return(np.concatenate((features, logarithms, xlogx, sqrts, polynomials), axis=1))
 
     def write_output_file(self, ids, predictions, filename):
         """Write given id-s and predictions to filename with headers."""
@@ -89,10 +91,14 @@ class Regressor:
         arr[:,0] = model[0]
         return np.reshape(model[0], newshape=(model[0].shape[0], 1))
 
-    def get_params_lasso(self, X, y, lamb=0):
+    def get_params_lasso(self, X, y, lamb=0, max_iter=10000):
         """Fit a LASSO regression model and return parameters."""
         n_col = X.shape[1]
-        return np.linalg.lstsq(X.T.dot(X) + lamb * np.identity(n_col), X.T.dot(y))
+        clf = linear_model.Lasso(alpha=lamb, max_iter=max_iter, fit_intercept=False)
+        clf.fit(X, y)
+        arr = np.zeros(shape=(X.shape[1], 1))
+        arr[:, 0] = clf.coef_
+        return arr
 
     def predict(self, params, X):
         """Predict y given X and parameters."""
@@ -102,7 +108,7 @@ class Regressor:
         """Fit one linear regression model using all rows and return the model and loss."""
 
         # Fit model
-        params = self.get_params(self.train_features,
+        params = self.get_params_lasso(self.train_features,
                                self.train_labels,
                                lamb=lamb)
         predictions = self.predict(params, self.train_features)
@@ -125,9 +131,8 @@ class Regressor:
         train_features, train_labels, test_features, test_labels = self.cv_separate_data(subslice)
 
         # Fit model
-        params = self.get_params(train_features,
-                               train_labels,
-                               lamb=lamb)
+        params = self.get_params_lasso(train_features, train_labels,
+                                       lamb=lamb, max_iter=1000)
         predictions = self.predict(params, test_features)
 
         # Calculate loss
@@ -222,12 +227,13 @@ class Regressor:
 
     def test(self):
         """Test stuff"""
-        for lamb in [0.001, 0.01, 0.03, 0.06, 0.1, 0.2, 0.5, 1, 3, 6, 10, 30, 100, 300, 1000]:
+        #for lamb in [0, 0.001, 0.01, 0.03, 0.06, 0.1, 0.2, 0.5, 1, 3, 6, 10, 30, 100, 300, 1000]:
+        for lamb in [3, 5, 7, 9]:
             print("---- LAMBDA = %.3f ----" % (lamb))
             params = self.cross_validate(10, lamb)
 
     def run(self):
-        params = self.fit(lamb=30)[0]
+        params = self.fit(lamb=5)[0]
         predictions = self.predict(params, self.train_features)
 
         # Calculate loss
@@ -238,4 +244,4 @@ class Regressor:
 
 # TODO Print coefficients or plot distribution!
 Regressor('data/train.csv').test()
-#Regressor('data/train.csv').run()
+# Regressor('data/train.csv').run()
