@@ -97,7 +97,7 @@ class Regressor:
         arr[:,0] = model[0]
         return np.reshape(model[0], newshape=(model[0].shape[0], 1))
 
-    def get_params_lasso(self, X, y, lamb=0, max_iter=10000):
+    def get_params_lasso(self, X, y, lamb=0, max_iter=1000):
         """Fit a LASSO regression model and return parameters."""
         n_col = X.shape[1]
         clf = linear_model.Lasso(alpha=lamb, max_iter=max_iter, fit_intercept=False)
@@ -114,7 +114,7 @@ class Regressor:
         """Fit one linear regression model using all rows and return the model and loss."""
 
         # Fit model
-        params = self.get_params_lasso(self.train_features,
+        params = self.get_params(self.train_features,
                                self.train_labels,
                                lamb=lamb)
         predictions = self.predict(params, self.train_features)
@@ -137,8 +137,8 @@ class Regressor:
         train_features, train_labels, test_features, test_labels = self.cv_separate_data(subslice)
 
         # Fit model
-        params = self.get_params_lasso(train_features, train_labels,
-                                       lamb=lamb, max_iter=1000)
+        params = self.get_params(train_features, train_labels,
+                                       lamb=lamb)
         predictions = self.predict(params, test_features)
 
         # Calculate loss
