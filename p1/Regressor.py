@@ -193,7 +193,7 @@ class Regressor:
                 best_slice = i
 
         #print("CV result: slice %d with RMSE %d and lambda %d." % (best_slice, best_rmse, lamb))
-        print("CV result: mean RMSE %d." % (sum(rmses)/len(rmses)))
+        print("CV result: RMSE mean %d, stdev %d." % (np.mean(rmses), np.std(rmses)))
 
         return best_model
 
@@ -224,18 +224,18 @@ class Regressor:
         """Test stuff"""
         for lamb in [0.001, 0.01, 0.03, 0.06, 0.1, 0.2, 0.5, 1, 3, 6, 10, 30, 100, 300, 1000]:
             print("---- LAMBDA = %.3f ----" % (lamb))
-            params = self.cross_validate(2, lamb)
+            params = self.cross_validate(10, lamb)
 
     def run(self):
-        params = self.fit(lamb=10)[0]
+        params = self.fit(lamb=30)[0]
         predictions = self.predict(params, self.train_features)
 
         # Calculate loss
         errors = predictions - self.train_labels
         rmse = math.sqrt(errors.T.dot(errors) / errors.shape[0])
-        print(rmse)
+        #print(rmse)
         self.predict_on_testset(params, 'data/validate_and_test.csv', 'predictions/validate_and_test.out')
 
 # TODO Print coefficients or plot distribution!
-# Regressor('data/train.csv').test()
-Regressor('data/train.csv').run()
+Regressor('data/train.csv').test()
+#Regressor('data/train.csv').run()
