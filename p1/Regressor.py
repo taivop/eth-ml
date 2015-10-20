@@ -19,6 +19,9 @@ class Regressor:
         self.train_features = self.train_raw[:, 1:-1]
         self.train_labels = self.train_raw[:, -1:self.train_raw.shape[1]]
 
+        # Remove some features
+        self.train_features = self.delete_features(self.train_features)
+
         # Add nonlinear features
         self.train_features = self.add_nonlinear_features(self.train_features)
 
@@ -30,6 +33,9 @@ class Regressor:
         # Add bias term
         bias = np.ones(shape=(self.train_raw.shape[0], 1))
         self.train_features = np.concatenate((bias, self.train_features), axis=1)
+
+    def delete_features(self, features):
+        return np.delete(features, [1, 2, 4, 6, 7, 8, 9, 10, 11, 12, 14], 1)
 
     def add_nonlinear_features(self, features):
         """Calculate some additional features and return the original features concatenated with the new ones."""
@@ -48,7 +54,7 @@ class Regressor:
                 feature2 = features[:, j]
                 polynomials[:, i * num_original_features + j] = np.multiply(feature1, feature2)
 
-        return(np.concatenate((features, logarithms, xlogx, sqrts, polynomials), axis=1))
+        return(np.concatenate((features, logarithms, sqrts, xlogx, poly3, poly4, polynomials), axis=1))
 
     def write_output_file(self, ids, predictions, filename):
         """Write given id-s and predictions to filename with headers."""
@@ -209,6 +215,9 @@ class Regressor:
         ids = raw[:, 0:1]
         features = raw[:, 1:]
 
+        # Delete some features
+        features = self.delete_features(features)
+
         # Add nonlinear features
         features = self.add_nonlinear_features(features)
 
@@ -228,12 +237,12 @@ class Regressor:
     def test(self):
         """Test stuff"""
         #for lamb in [0, 0.001, 0.01, 0.03, 0.06, 0.1, 0.2, 0.5, 1, 3, 6, 10, 30, 100, 300, 1000]:
-        for lamb in [3, 5, 7, 9]:
+        for lamb in [0.01, 0.1, 1, 3, 5, 7, 9]:
             print("---- LAMBDA = %.3f ----" % (lamb))
             params = self.cross_validate(10, lamb)
 
     def run(self):
-        params = self.fit(lamb=5)[0]
+        params = self.fit(lamb=0.1)[0]
         predictions = self.predict(params, self.train_features)
 
         # Calculate loss
@@ -243,5 +252,5 @@ class Regressor:
         self.predict_on_testset(params, 'data/validate_and_test.csv', 'predictions/validate_and_test.out')
 
 # TODO Print coefficients or plot distribution!
-Regressor('data/train.csv').test()
-# Regressor('data/train.csv').run()
+# Regressor('data/train.csv').test()
+Regressor('data/train.csv').run()
