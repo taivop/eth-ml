@@ -37,12 +37,15 @@ class Regressor:
         self.train_features = np.concatenate((bias, self.train_features), axis=1)
 
         # Find and remove redundant features
-        self.find_redundant_features()
-        self.train_features = self.remove_redundant_features(self.train_features)
+        #self.find_redundant_features()
+        #self.train_features = self.remove_redundant_features(self.train_features)
 
     def delete_original_features(self, features):
         """Remove a subset of the original features"""
-        return np.delete(features, [1, 2, 4, 6, 7, 8, 9, 10, 11, 12, 14], 1)
+        #return np.delete(features, [1, 2, 4, 6, 7, 8, 9, 10, 11, 12], 1)
+        #return np.delete(features, [2, 4, 6, 7, 8, 9, 10, 11, 12], 1)
+        #return np.delete(features, [2, 4, 6, 7, 8, 9, 10, 11, 12], 1)
+        return features
 
     def find_redundant_features(self, lamb=0.1, vocal=False):
         """Remove a subset of all features"""
@@ -61,12 +64,11 @@ class Regressor:
             self.train_features = np.delete(self.train_features, i, 1)
             rmse = self.cross_validate(cv_count, lamb=lamb, vocal=False)[1]
 
-            if rmse - baseline <= -0.05:
+            if rmse - baseline < 0.1:
                 to_remove.append(i)
 
             # Restore original features
             self.train_features = np.copy(original_features)
-
             if vocal:
                 print("Removing feature %3d: change in RMSE is %5.1f" % (i, rmse - baseline))
 
@@ -88,8 +90,11 @@ class Regressor:
     def add_nonlinear_features(self, features):
         """Calculate some additional features and return the original features concatenated with the new ones."""
         logarithms = np.log(features + 1)
+        loglogs = np.log(logarithms + 1)
         #powers = np.power(np.ones(shape=features.shape) * 2, features)
+        xloglogs = np.multiply(features, loglogs)
         xlogx = np.multiply(features, logarithms)
+        x2logx = np.multiply(features, xlogx)
         sqrts = np.sqrt(features)
         poly3 = np.power(features, 3)
         poly4 = np.power(features, 4)
@@ -102,8 +107,8 @@ class Regressor:
                 feature2 = features[:, j]
                 polynomials[:, i * num_original_features + j] = np.multiply(feature1, feature2)
 
-        return(np.concatenate((features, logarithms, sqrts, xlogx, poly3, poly4, polynomials), axis=1))
-        # return features
+        # return(np.concatenate((features, logarithms, sqrts, xlogx, poly3, poly4, polynomials), axis=1))
+        return np.concatenate((features, logarithms, loglogs, sqrts, xloglogs, xlogx, x2logx, poly3, poly4, polynomials), axis=1)
 
     def write_output_file(self, ids, predictions, filename):
         """Write given id-s and predictions to filename with headers."""
@@ -150,6 +155,15 @@ class Regressor:
         """Fit a LASSO regression model and return parameters."""
         n_col = X.shape[1]
         clf = linear_model.Lasso(alpha=lamb, max_iter=max_iter, fit_intercept=False)
+        clf.fit(X, y)
+        arr = np.zeros(shape=(X.shape[1], 1))
+        arr[:, 0] = clf.coef_
+        return arr
+
+    def get_params_lasso_lars(self, X, y, lamb=0, max_iter=1000):
+        """Fit a LASSO regression model and return parameters."""
+        n_col = X.shape[1]
+        clf = linear_model.LassoLars(alpha=lamb, max_iter=max_iter, fit_intercept=False)
         clf.fit(X, y)
         arr = np.zeros(shape=(X.shape[1], 1))
         arr[:, 0] = clf.coef_
@@ -304,7 +318,7 @@ class Regressor:
         #print(rmse)
         self.predict_on_testset(params, 'data/validate_and_test.csv', 'predictions/validate_and_test.out')
 
-Regressor('data/train.csv').test()
-Regressor('data/train.csv').run()
+# Regressor('data/train.csv').test()
+# Regressor('data/train.csv').run()
 
-# Regressor('data/train.csv').find_redundant_features()
+Regressor('data/train.csv').find_redundant_features(vocal=True)
