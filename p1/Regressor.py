@@ -8,8 +8,10 @@ class Regressor:
     stds = None
     training_set_row_count = 0
 
+    features_to_remove = []
+
     def __init__(self, filename_training_data):
-        #np.random.seed(42)
+        np.random.seed(42)
 
         # Read in training data and separate appropriately
         self.train_raw = np.genfromtxt(filename_training_data, delimiter=',')
@@ -20,7 +22,7 @@ class Regressor:
         self.train_labels = self.train_raw[:, -1:self.train_raw.shape[1]]
 
         # Remove some features
-        self.train_features = self.delete_features(self.train_features)
+        self.train_features = self.delete_original_features(self.train_features)
 
         # Add nonlinear features
         self.train_features = self.add_nonlinear_features(self.train_features)
@@ -34,8 +36,54 @@ class Regressor:
         bias = np.ones(shape=(self.train_raw.shape[0], 1))
         self.train_features = np.concatenate((bias, self.train_features), axis=1)
 
-    def delete_features(self, features):
+        # Find and remove redundant features
+        self.find_redundant_features()
+        self.train_features = self.remove_redundant_features(self.train_features)
+
+    def delete_original_features(self, features):
+        """Remove a subset of the original features"""
         return np.delete(features, [1, 2, 4, 6, 7, 8, 9, 10, 11, 12, 14], 1)
+
+    def find_redundant_features(self, lamb=0.1, vocal=False):
+        """Remove a subset of all features"""
+
+        cv_count = 10
+
+        original_features = np.copy(self.train_features)
+
+        # Calculate baseline RMSE using all features
+        baseline = self.cross_validate(cv_count, lamb=lamb, vocal=False)[1]
+
+        to_remove = []
+
+        # Remove features one by one and compare RMSE with baseline
+        for i in range(0, self.train_features.shape[1]):
+            self.train_features = np.delete(self.train_features, i, 1)
+            rmse = self.cross_validate(cv_count, lamb=lamb, vocal=False)[1]
+
+            if rmse - baseline <= -0.05:
+                to_remove.append(i)
+
+            # Restore original features
+            self.train_features = np.copy(original_features)
+
+            if vocal:
+                print("Removing feature %3d: change in RMSE is %5.1f" % (i, rmse - baseline))
+
+        # Remove whole feature set that we found and compare with baseline
+        self.train_features = np.delete(self.train_features, to_remove, 1)
+        rmse = self.cross_validate(cv_count, lamb=lamb, vocal=False)[1]
+        self.train_features = np.copy(original_features)
+
+        if vocal:
+            print("Removing feature set " + str(to_remove) + ":")
+            print("RMSE\t old: %5.1f new: %5.1f" % (baseline, rmse))
+
+        self.features_to_remove = to_remove
+
+    def remove_redundant_features(self, features):
+        """Remove redundant features we have found"""
+        return np.delete(features, self.features_to_remove, 1)
 
     def add_nonlinear_features(self, features):
         """Calculate some additional features and return the original features concatenated with the new ones."""
@@ -55,6 +103,7 @@ class Regressor:
                 polynomials[:, i * num_original_features + j] = np.multiply(feature1, feature2)
 
         return(np.concatenate((features, logarithms, sqrts, xlogx, poly3, poly4, polynomials), axis=1))
+        # return features
 
     def write_output_file(self, ids, predictions, filename):
         """Write given id-s and predictions to filename with headers."""
@@ -172,7 +221,7 @@ class Regressor:
 
         return train_features, train_labels, test_features, test_labels
 
-    def cross_validate(self, cv_count, lamb):
+    def cross_validate(self, cv_count, lamb, vocal=True):
         """Train cv_count models and test by partitioning the dataset into cv_count slices."""
 
         best_loss = float('inf')
@@ -204,9 +253,10 @@ class Regressor:
                 best_slice = i
 
         #print("CV result: slice %d with RMSE %d and lambda %d." % (best_slice, best_rmse, lamb))
-        print("CV result: RMSE mean %d, stdev %d." % (np.mean(rmses), np.std(rmses)))
+        if vocal:
+            print("CV result: RMSE mean %d, stdev %d." % (np.mean(rmses), np.std(rmses)))
 
-        return best_model
+        return best_model, np.mean(rmses)
 
     def predict_on_testset(self, params, file_in, file_out):
         """Given a testset file, generate the corresponding predictions file."""
@@ -216,7 +266,7 @@ class Regressor:
         features = raw[:, 1:]
 
         # Delete some features
-        features = self.delete_features(features)
+        features = self.delete_original_features(features)
 
         # Add nonlinear features
         features = self.add_nonlinear_features(features)
@@ -228,6 +278,9 @@ class Regressor:
         bias = np.ones(shape=(features.shape[0], 1))
         features = np.concatenate((bias, features), axis=1)
 
+        # Remove redundant features
+        features = self.remove_redundant_features(features)
+
         # Predict
         predictions = self.predict(params, features)
 
@@ -237,7 +290,7 @@ class Regressor:
     def test(self):
         """Test stuff"""
         #for lamb in [0, 0.001, 0.01, 0.03, 0.06, 0.1, 0.2, 0.5, 1, 3, 6, 10, 30, 100, 300, 1000]:
-        for lamb in [0.01, 0.1, 1, 3, 5, 7, 9]:
+        for lamb in [0, 0.01, 0.1, 1, 3, 5, 7, 9]:
             print("---- LAMBDA = %.3f ----" % (lamb))
             params = self.cross_validate(10, lamb)
 
@@ -251,6 +304,7 @@ class Regressor:
         #print(rmse)
         self.predict_on_testset(params, 'data/validate_and_test.csv', 'predictions/validate_and_test.out')
 
-# TODO Print coefficients or plot distribution!
-# Regressor('data/train.csv').test()
+Regressor('data/train.csv').test()
 Regressor('data/train.csv').run()
+
+# Regressor('data/train.csv').find_redundant_features()
