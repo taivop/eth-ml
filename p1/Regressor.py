@@ -37,15 +37,15 @@ class Regressor:
         self.train_features = np.concatenate((bias, self.train_features), axis=1)
 
         # Find and remove redundant features
-        #self.find_redundant_features()
-        #self.train_features = self.remove_redundant_features(self.train_features)
+        self.find_redundant_features()
+        self.train_features = self.remove_redundant_features(self.train_features)
 
     def delete_original_features(self, features):
         """Remove a subset of the original features"""
         #return np.delete(features, [1, 2, 4, 6, 7, 8, 9, 10, 11, 12], 1)
         #return np.delete(features, [2, 4, 6, 7, 8, 9, 10, 11, 12], 1)
-        #return np.delete(features, [2, 4, 6, 7, 8, 9, 10, 11, 12], 1)
-        return features
+        return np.delete(features, [2, 4, 6, 7, 8, 9, 10, 11, 12], 1)
+        #return features
 
     def find_redundant_features(self, lamb=0.1, vocal=False):
         """Remove a subset of all features"""
@@ -64,7 +64,7 @@ class Regressor:
             self.train_features = np.delete(self.train_features, i, 1)
             rmse = self.cross_validate(cv_count, lamb=lamb, vocal=False)[1]
 
-            if rmse - baseline < 0.1:
+            if rmse - baseline < -0.05:
                 to_remove.append(i)
 
             # Restore original features
@@ -160,10 +160,10 @@ class Regressor:
         arr[:, 0] = clf.coef_
         return arr
 
-    def get_params_lasso_lars(self, X, y, lamb=0, max_iter=1000):
+    def get_params_elastic_net(self, X, y, lamb=0, max_iter=1000):
         """Fit a LASSO regression model and return parameters."""
         n_col = X.shape[1]
-        clf = linear_model.LassoLars(alpha=lamb, max_iter=max_iter, fit_intercept=False)
+        clf = linear_model.ElasticNet(alpha=lamb, max_iter=max_iter, fit_intercept=False)
         clf.fit(X, y)
         arr = np.zeros(shape=(X.shape[1], 1))
         arr[:, 0] = clf.coef_
@@ -304,7 +304,7 @@ class Regressor:
     def test(self):
         """Test stuff"""
         #for lamb in [0, 0.001, 0.01, 0.03, 0.06, 0.1, 0.2, 0.5, 1, 3, 6, 10, 30, 100, 300, 1000]:
-        for lamb in [0, 0.01, 0.1, 1, 3, 5, 7, 9]:
+        for lamb in [0.01, 0.1, 1, 3, 5, 7, 9]:
             print("---- LAMBDA = %.3f ----" % (lamb))
             params = self.cross_validate(10, lamb)
 
@@ -318,7 +318,7 @@ class Regressor:
         #print(rmse)
         self.predict_on_testset(params, 'data/validate_and_test.csv', 'predictions/validate_and_test.out')
 
-# Regressor('data/train.csv').test()
-# Regressor('data/train.csv').run()
+Regressor('data/train.csv').test()
+Regressor('data/train.csv').run()
 
-Regressor('data/train.csv').find_redundant_features(vocal=True)
+#Regressor('data/train.csv').find_redundant_features(vocal=True)
