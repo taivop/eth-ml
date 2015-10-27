@@ -42,7 +42,6 @@ class Regressor:
 
     def delete_original_features(self, features):
         """Remove a subset of the original features"""
-        # return np.delete(features, [2, 4, 6, 7, 8, 9, 10, 11, 12], 1)
         return np.delete(features, [1, 2, 4, 6, 7, 8, 9, 10, 11, 12, 14], 1)
 
     def find_redundant_features(self, lamb=0.1, vocal=False):
@@ -88,10 +87,7 @@ class Regressor:
     def add_nonlinear_features(self, features):
         """Calculate some additional features and return the original features concatenated with the new ones."""
         logarithms = np.log(features + 1)
-        loglogs = np.log(logarithms + 1)
-        xloglogs = np.multiply(features, loglogs)
         xlogx = np.multiply(features, logarithms)
-        x2logx = np.multiply(features, xlogx)
         sqrts = np.sqrt(features)
         poly3 = np.power(features, 3)
         poly4 = np.power(features, 4)
@@ -104,8 +100,7 @@ class Regressor:
                 feature2 = features[:, j]
                 polynomials[:, i * num_original_features + j] = np.multiply(feature1, feature2)
 
-        return(np.concatenate((features, logarithms, sqrts, xlogx, poly3, poly4, polynomials), axis=1))
-        # return np.concatenate((features, logarithms, loglogs, sqrts, xloglogs, xlogx, x2logx, poly3, poly4, polynomials), axis=1)
+        return np.concatenate((features, logarithms, sqrts, xlogx, poly3, poly4, polynomials), axis=1)
 
     def write_output_file(self, ids, predictions, filename):
         """Write given id-s and predictions to filename with headers."""
@@ -300,7 +295,7 @@ class Regressor:
 
     def test(self):
         """Test stuff"""
-        for lamb in [0.01, 0.1, 1, 3, 5, 7, 9]:
+        for lamb in [0.1, 1, 3, 5, 7, 9]:
             print("---- LAMBDA = %.3f ----" % (lamb))
             params = self.cross_validate(10, lamb)
         print("Testing with %d features" % (self.train_features.shape[0]))
@@ -316,7 +311,5 @@ class Regressor:
         print("Running with %d features" % (self.train_features.shape[0]))
 
 
-Regressor('data/train.csv').test()
+# Regressor('data/train.csv').test()
 Regressor('data/train.csv').run()
-
-#Regressor('data/train.csv').find_redundant_features(vocal=True)
