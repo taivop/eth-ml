@@ -42,10 +42,8 @@ class Regressor:
 
     def delete_original_features(self, features):
         """Remove a subset of the original features"""
-        #return np.delete(features, [1, 2, 4, 6, 7, 8, 9, 10, 11, 12], 1)
-        #return np.delete(features, [2, 4, 6, 7, 8, 9, 10, 11, 12], 1)
-        return np.delete(features, [2, 4, 6, 7, 8, 9, 10, 11, 12], 1)
-        #return features
+        # return np.delete(features, [2, 4, 6, 7, 8, 9, 10, 11, 12], 1)
+        return np.delete(features, [1, 2, 4, 6, 7, 8, 9, 10, 11, 12, 14], 1)
 
     def find_redundant_features(self, lamb=0.1, vocal=False):
         """Remove a subset of all features"""
@@ -64,7 +62,7 @@ class Regressor:
             self.train_features = np.delete(self.train_features, i, 1)
             rmse = self.cross_validate(cv_count, lamb=lamb, vocal=False)[1]
 
-            if rmse - baseline < -0.05:
+            if rmse - baseline <= -0.05:
                 to_remove.append(i)
 
             # Restore original features
@@ -91,7 +89,6 @@ class Regressor:
         """Calculate some additional features and return the original features concatenated with the new ones."""
         logarithms = np.log(features + 1)
         loglogs = np.log(logarithms + 1)
-        #powers = np.power(np.ones(shape=features.shape) * 2, features)
         xloglogs = np.multiply(features, loglogs)
         xlogx = np.multiply(features, logarithms)
         x2logx = np.multiply(features, xlogx)
@@ -107,8 +104,8 @@ class Regressor:
                 feature2 = features[:, j]
                 polynomials[:, i * num_original_features + j] = np.multiply(feature1, feature2)
 
-        # return(np.concatenate((features, logarithms, sqrts, xlogx, poly3, poly4, polynomials), axis=1))
-        return np.concatenate((features, logarithms, loglogs, sqrts, xloglogs, xlogx, x2logx, poly3, poly4, polynomials), axis=1)
+        return(np.concatenate((features, logarithms, sqrts, xlogx, poly3, poly4, polynomials), axis=1))
+        # return np.concatenate((features, logarithms, loglogs, sqrts, xloglogs, xlogx, x2logx, poly3, poly4, polynomials), axis=1)
 
     def write_output_file(self, ids, predictions, filename):
         """Write given id-s and predictions to filename with headers."""
@@ -303,10 +300,10 @@ class Regressor:
 
     def test(self):
         """Test stuff"""
-        #for lamb in [0, 0.001, 0.01, 0.03, 0.06, 0.1, 0.2, 0.5, 1, 3, 6, 10, 30, 100, 300, 1000]:
         for lamb in [0.01, 0.1, 1, 3, 5, 7, 9]:
             print("---- LAMBDA = %.3f ----" % (lamb))
             params = self.cross_validate(10, lamb)
+        print("Testing with %d features" % (self.train_features.shape[0]))
 
     def run(self):
         params = self.fit(lamb=0.1)[0]
@@ -315,8 +312,9 @@ class Regressor:
         # Calculate loss
         errors = predictions - self.train_labels
         rmse = math.sqrt(errors.T.dot(errors) / errors.shape[0])
-        #print(rmse)
         self.predict_on_testset(params, 'data/validate_and_test.csv', 'predictions/validate_and_test.out')
+        print("Running with %d features" % (self.train_features.shape[0]))
+
 
 Regressor('data/train.csv').test()
 Regressor('data/train.csv').run()
