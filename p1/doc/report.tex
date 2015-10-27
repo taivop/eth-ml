@@ -26,17 +26,17 @@
 
 \section*{Experimental Protocol}
 
-To obtain the model from raw data, I did the following:
+To obtain the model from raw feature vector $X = (x_1, ..., x_n)$, the following steps were taken. Each step was applied to the result of last step.
 
-\begin{itemize}
-	\item asd
-\end{itemize}
-
-
-Suppose that someone wants to reproduce your results. Briefly describe the steps used to obtain the
-predictions starting from the raw data set downloaded from the project website. Use the following
-sections to explain your methodology. Feel free to add graphs or screenshots if you think it's
-necessary. The report should contain a maximum of 2 pages.
+\begin{enumerate}
+	\item A subset of the original features were removed. Selection criteria were similar to those laid out in Step 5.
+	\item Nonlinear combinations of the original features were added (described in Section~\ref{sec:features}).
+	\item Features were normalised by subtracting the mean and dividing by the standard deviation.
+	\item A bias term was added.
+	\item Redundant features were identified by removing each feature $x_i$, running 10-fold cross-validation on features $X' = X \setminus x_i$. A feature was declared redundant if the mean RMSE from cross-validation on features $X'$ decreased by $0.05$ compared to using all features.
+	\item A \textbf{ridge regression} model with normalisation parameter $\lambda=0.1$ was trained. The value of $\lambda$ was selected in 10-fold cross-validation to produce the lowest mean RMSE.
+	\item Weights $(w_1,...w_n)$ of the model were used to find the predicted value $y = \sum_{i=1}^{n} w_i x_i$.
+\end{enumerate}
 
 \section{Tools}
 I used:
@@ -47,18 +47,32 @@ I used:
 	\item NumPy for everything else
 \end{itemize}
 
-All code used for this project is wrapped into a single class in \verb{Regressor.py}.
+All code used for this project is wrapped into a single class in \verb+Regressor.py+.
 
 \section{Algorithm}
-Describe the algorithm you used for regression (e.g. ordinary least squares, ridge regression, $\ldots$)
+Ridge regression was chosen as the best model in this project.
 
 \section{Features}
-Did you construct any new features? What feature transforms did you use?
+The following features were added:
+\label{sec:features}
+\begin{itemize}
+		\item bias term $x_0=1$
+		\item $log(1 + x_i)$
+		\item $x_i log(x_i)$
+		\item $\sqrt{x_i}$
+		\item $x_i x_j$ for all $i,j \in \{1,...,n\}$
+		\item $x_i^3$
+		\item $x_i^4$
+	\end{itemize}
 
 \section{Parameters}
 How did you find the parameters of your model? (What parameters have you searched over, cross validation procedure, $\ldots$)
 
-\section{Lessons Learned} What other algorithms, tools or methods did you try out that didn't work well?
+\section{Lessons Learned}
+
+
+
+What other algorithms, tools or methods did you try out that didn't work well?
 Why do you think they performed worse than what you used for your final submission?
 
 \end{document}
