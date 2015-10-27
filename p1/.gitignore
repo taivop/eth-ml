@@ -1,3 +1,7 @@
 params/
 predictions/
 .idea
+
+doc/
+!doc/report.tex
+!doc/report.pdf
