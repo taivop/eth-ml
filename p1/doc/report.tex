@@ -30,12 +30,12 @@ To obtain the model from raw feature vector $X = (x_1, ..., x_n)$, the following
 
 \begin{enumerate}
 	\item A subset of the original features were removed. Selection criteria were similar to those laid out in Step 5.
-	\item Nonlinear combinations of the original features were added (described in Section~\ref{sec:features}).
+	\item Nonlinear combinations of the features were added (described in Section~\ref{sec:features}).
 	\item Features were normalised by subtracting the mean and dividing by the standard deviation.
-	\item A bias term was added.
-	\item Redundant features were identified by removing each feature $x_i$, running 10-fold cross-validation on features $X' = X \setminus x_i$. A feature was declared redundant if the mean RMSE from cross-validation on features $X'$ decreased by $0.05$ compared to using all features.
+	\item A bias term $x_0$ was added to the data.
+	\item Redundant features were identified by removing each feature $x_i$, running 10-fold cross-validation on features $X' = X \setminus x_i$. A feature was declared redundant if the mean RMSE from cross-validation on features $X'$ decreased by $0.05$ or more compared to using all features.
 	\item A \textbf{ridge regression} model with normalisation parameter $\lambda=0.1$ was trained. The value of $\lambda$ was selected in 10-fold cross-validation to produce the lowest mean RMSE.
-	\item Weights $(w_1,...w_n)$ of the model were used to find the predicted value $y = \sum_{i=1}^{n} w_i x_i$.
+	\item Weights $(w_0,...w_n)$ of the model were used to find the predicted value $y = \sum_{i=0}^{n} w_i x_i$.
 \end{enumerate}
 
 \section{Tools}
@@ -66,13 +66,11 @@ The following features were added:
 	\end{itemize}
 
 \section{Parameters}
-How did you find the parameters of your model? (What parameters have you searched over, cross validation procedure, $\ldots$)
+To find the hyperparameter $\lambda$ of ridge regression, I used 10-fold cross-validation, testing values of lambda ranging from 0.01 to 10000, with each tested lambda value roughly 3 times larger than the previous one ($[0.01, 0.03, 0.1, ...]$). The goal was the lowest mean RMSE over all 10 folds.
 
 \section{Lessons Learned}
+In addition to ridge regression, I tested LASSO regression. The CV error for LASSO was higher than for ridge regression. However, I did not conduct a formal parameter sweep (for LASSO) since ridge regression already had a quite low RMSE of $670$. It is entirely possible that LASSO would perform better given the right regularisation parameter.
 
-
-
-What other algorithms, tools or methods did you try out that didn't work well?
-Why do you think they performed worse than what you used for your final submission?
+At the start of the project, it was clear that adding nonlinear features decreased the RMSE on the training set. However, with too many features the model overfit (CV error was high while training error was low). Conclusion: it is very important to remove redundant features to avoid overfitting the model.
 
 \end{document}

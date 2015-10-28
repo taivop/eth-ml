@@ -37,7 +37,7 @@ class Regressor:
         self.train_features = np.concatenate((bias, self.train_features), axis=1)
 
         # Find and remove redundant features
-        self.find_redundant_features()
+        self.find_redundant_features(lamb=0.1)
         self.train_features = self.remove_redundant_features(self.train_features)
 
     def delete_original_features(self, features):
@@ -147,15 +147,6 @@ class Regressor:
         """Fit a LASSO regression model and return parameters."""
         n_col = X.shape[1]
         clf = linear_model.Lasso(alpha=lamb, max_iter=max_iter, fit_intercept=False)
-        clf.fit(X, y)
-        arr = np.zeros(shape=(X.shape[1], 1))
-        arr[:, 0] = clf.coef_
-        return arr
-
-    def get_params_elastic_net(self, X, y, lamb=0, max_iter=1000):
-        """Fit a LASSO regression model and return parameters."""
-        n_col = X.shape[1]
-        clf = linear_model.ElasticNet(alpha=lamb, max_iter=max_iter, fit_intercept=False)
         clf.fit(X, y)
         arr = np.zeros(shape=(X.shape[1], 1))
         arr[:, 0] = clf.coef_
@@ -295,12 +286,13 @@ class Regressor:
 
     def test(self):
         """Test stuff"""
-        for lamb in [0.1, 1, 3, 5, 7, 9]:
+        for lamb in [0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300, 1000, 3000, 10000]:
             print("---- LAMBDA = %.3f ----" % (lamb))
             params = self.cross_validate(10, lamb)
         print("Testing with %d features" % (self.train_features.shape[0]))
 
     def run(self):
+        """Train model and predict on test set."""
         params = self.fit(lamb=0.1)[0]
         predictions = self.predict(params, self.train_features)
 
@@ -311,5 +303,5 @@ class Regressor:
         print("Running with %d features" % (self.train_features.shape[0]))
 
 
-# Regressor('data/train.csv').test()
-Regressor('data/train.csv').run()
+Regressor('data/train.csv').test()
+# Regressor('data/train.csv').run()
