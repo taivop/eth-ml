@@ -23,10 +23,13 @@ class Classifier:
         self.train_labels.shape = self.train_labels.shape[0]
 
         # Normalise
+        # maxes = np.max(self.train_features, axis=1)
+        # maxes.shape = (self.train_features.shape[0], 1)
+        # self.train_features = self.train_features / maxes
         self.train_features = sklearn.preprocessing.normalize(self.train_features, axis=1)
 
         # Add nonlinear features
-        self.train_features = self.add_nonlinear_features(self.train_features)
+        #self.train_features = self.add_nonlinear_features(self.train_features)
 
         #Visualiser.tSNE_plot2(self.train_features, self.train_labels)
 
@@ -42,15 +45,15 @@ class Classifier:
     def cross_validate(self, C=1, cv_count=10):
         """Fit given model in 10-fold cross-validation and return accuracy scores."""
         # tsne = TSNE(n_components=2, random_state=0)
-        model = sklearn.svm.LinearSVC(dual=False, penalty="l2", C=C)
-        # model = sklearn.svm.SVC(C=C)
+        # model = sklearn.svm.LinearSVC(dual=False, penalty="l2", C=C)
+        model = sklearn.svm.SVC(kernel="rbf", C=C)
         data = self.train_features #tsne.fit_transform(self.train_features)
         scores = sklearn.cross_validation.cross_val_score(model, data, self.train_labels, cv=cv_count)
 
         return np.mean(scores), np.std(scores)
 
     def test_Cs(self):
-        Cs = [0.1, 0.3, 1, 3, 10, 30, 100]
+        Cs = [10, 30, 100, 300, 1000, 3000, 10000, 30000] #[0.1, 0.3, 1, 3, 10, 30, 100]
 
         for C in Cs:
             r_mean, r_std = self.cross_validate(C=C, cv_count=10)
@@ -65,9 +68,7 @@ class Classifier:
 
         # Normalise features and add nonlinear ones
         features = sklearn.preprocessing.normalize(features, axis=1)
-
-        # Add nonlinear features
-        features = self.add_nonlinear_features(features)
+        # features = self.add_nonlinear_features(features)
 
         # Predict
         predictions = model.predict(features)
@@ -107,7 +108,9 @@ class Classifier:
     def run(self):
         """Train model and predict on test set."""
         # Train model
-        model = sklearn.svm.LinearSVC(dual=False, C=10)
+        #model = sklearn.svm.LinearSVC(dual=False, C=10)
+        #model = sklearn.svm.SVC(kernel="poly", degree=3, C=100000)
+        model = sklearn.svm.SVC(kernel="rbf", C=1000)
         model.fit(self.train_features, self.train_labels)
 
         self.predict_on_testset(model, "data/validate_and_test.csv", "predictions/submission.csv")
