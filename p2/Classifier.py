@@ -69,6 +69,7 @@ class Classifier:
         for score in clf.grid_scores_:
             print(score)
         print("Best score: " + "\033[0;31m" + str(clf.best_score_) + "\033[0m")
+        print(clf.best_params_)
 
     def predict_on_testset(self, model, file_in, file_out):
         """Given a testset file, generate the corresponding predictions file."""
@@ -119,7 +120,7 @@ class Classifier:
     def run(self):
         """Train model and predict on test set."""
         # Train model
-        model = sklearn.svm.SVC(kernel="rbf", C=100, gamma=0.01)
+        model = sklearn.svm.SVC(kernel="rbf", C=10, gamma=0.1)
         model.fit(self.train_features, self.train_labels)
 
         self.predict_on_testset(model, "data/validate_and_test.csv", "predictions/submission.csv")
