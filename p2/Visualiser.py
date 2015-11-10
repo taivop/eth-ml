@@ -21,6 +21,8 @@ class Visualiser:
         colors = labels
 
         plt.scatter(x, y, c=colors)
+        plt.xlabel("t-SNE component 1")
+        plt.ylabel("t-SNE component 2")
         plt.show()
 
     @staticmethod
@@ -40,4 +42,24 @@ class Visualiser:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         ax.scatter(x, y, z, s=20, c=colors, depthshade=True)
+        plt.show()
+
+    @staticmethod
+    def plot_failures(features, labels, errors):
+        """Do dimension reduction to 2 dimensions with t-SNE and plot the result."""
+        model = TSNE(n_components=2, random_state=0)
+        transformed = model.fit_transform(features)
+        errors = map(lambda x: 30 if x else 10, errors)
+
+        print("Data transformed, now plotting...")
+
+        # Plotting
+        x = transformed[:, 0]
+        y = transformed[:, 1]
+        colors = labels
+        areas = errors
+
+        plt.scatter(x, y, c=colors, s=areas)
+        plt.xlabel("t-SNE component 1")
+        plt.ylabel("t-SNE component 2")
         plt.show()
