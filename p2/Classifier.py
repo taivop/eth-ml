@@ -2,6 +2,10 @@ import numpy as np
 import sklearn
 from Visualiser import Visualiser
 from sklearn.manifold import TSNE
+from sklearn.ensemble import BaggingClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB
 
 class Classifier:
     means = None
@@ -23,11 +27,11 @@ class Classifier:
         self.train_labels.shape = self.train_labels.shape[0]
 
         # Normalise
-        self.train_features = self.normalise(self.train_features)
+        #self.train_features = self.normalise(self.train_features)
         #self.train_features = sklearn.preprocessing.normalize(self.train_features, axis=0)
 
         # Add nonlinear features
-        #self.train_features = self.add_nonlinear_features(self.train_features)
+        self.train_features = self.add_nonlinear_features(self.train_features)
 
         #Visualiser.tSNE_plot2(self.train_features, self.train_labels)
 
@@ -71,6 +75,27 @@ class Classifier:
         print("Best score: " + "\033[0;31m" + str(clf.best_score_) + "\033[0m")
         print(clf.best_params_)
 
+    def grid_bag(self):
+        """Train a bag model."""
+        parameters = {
+                      # 'max_samples': [0.4, 0.6, 0.8],
+                      # 'max_features': [0.4, 0.6, 0.8, 1]
+                        'n_estimators': [20, 30, 40, 50, 60, 100],
+                        'max_features': [1, 2, 3, 4, "sqrt", "log2"],
+                        'min_samples_split': [1, 3, 5],
+        }
+
+        bagging = RandomForestClassifier(max_depth=None, random_state=0)
+        # bagging = sklearn.naive_bayes.GaussianNB()
+        clf = sklearn.grid_search.GridSearchCV(bagging, parameters, cv=3, verbose=1, n_jobs=4)
+        clf.fit(self.train_features, self.train_labels)
+
+        for score in clf.grid_scores_:
+            print(score)
+        print("Best score: " + "\033[0;31m" + str(clf.best_score_) + "\033[0m")
+        print(clf.best_params_)
+
+
     def predict_on_testset(self, model, file_in, file_out):
         """Given a testset file, generate the corresponding predictions file."""
         # Read data in
@@ -80,7 +105,7 @@ class Classifier:
 
         # Normalise features and add nonlinear ones
         features = self.normalise(features)
-        # features = self.add_nonlinear_features(features)
+        features = self.add_nonlinear_features(features)
 
         # Predict
         predictions = model.predict(features)
@@ -120,7 +145,8 @@ class Classifier:
     def run(self):
         """Train model and predict on test set."""
         # Train model
-        model = sklearn.svm.SVC(kernel="rbf", C=10, gamma=0.1)
+        #model = sklearn.svm.SVC(kernel="rbf", C=10, gamma=0.1)
+        model = RandomForestClassifier(max_depth=None, max_features=2, min_samples_split=5, n_estimators=40)
         model.fit(self.train_features, self.train_labels)
 
         self.predict_on_testset(model, "data/validate_and_test.csv", "predictions/submission.csv")
@@ -145,3 +171,4 @@ class Classifier:
 Classifier('data/train.csv').run()
 # Classifier('data/train.csv').plot_failures()
 # Classifier('data/train.csv').grid()
+# Classifier('data/train.csv').grid_bag()
