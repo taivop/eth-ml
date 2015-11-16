@@ -104,7 +104,7 @@ class Classifier:
         features = raw[:, 1:]
 
         # Normalise features and add nonlinear ones
-        features = self.normalise(features)
+        # features = self.normalise(features)
         features = self.add_nonlinear_features(features)
 
         # Predict
