@@ -147,7 +147,7 @@ class Classifier:
         # Train model
         #model = sklearn.svm.SVC(kernel="rbf", C=10, gamma=0.1)
         model = RandomForestClassifier(max_depth=None, max_features=2, min_samples_split=5, n_estimators=40)
-        model.fit(self.train_features[1:-100,:], self.train_labels[1:-100])
+        model.fit(self.train_features, self.train_labels)
 
         train_accy = self.accuracy(self.train_labels[-100:], model.predict(self.train_features[-100:,:]))
         print(train_accy)
