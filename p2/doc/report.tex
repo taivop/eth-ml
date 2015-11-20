@@ -31,7 +31,7 @@ I added nonlinear features to the original features and used a Random Forest cla
 I used Python with scikit-learn 0.17. Source code is attached to the submission.
 
 \section{Algorithm}
-I used Random Forest with (max_depth=None, max_features=2, min_samples_split=5, n_estimators=40
+I used a Random Forest classifier with 40 trees. Parameters are described below.
 
 \section{Features}
 I added the following new features, for each feature x: $log x$, $x log x$, $\sqrt{x}$, $x^3$, $x^4$ and all second-order polynomial combinations of features.
@@ -41,18 +41,26 @@ I did not normalise the data because it turned out that neither row-max normalis
 For visualising the data (for debugging and getting an overview of the data) I used the t-SNE algorithm to map the datapoints into 2 dimensions so that locality information would be conserved. The result is depicted in Figure~\ref{fig:tsne} and shows that the datapoints are quite well linearly separable even in the 2-dimensional space resulting from applying t-SNE.
 
 \begin{figure}[h]
-	\label{fig:tsne}
 	\begin{center}
 	\includegraphics[width=\textwidth]{failures1}
 	\end{center}
+	\caption{Data after t-SNE transformation into 2 dimensions. Misclassified points are larger than correctly classified points.}
+	\label{fig:tsne}
 \end{figure}
 
 \section{Parameters}
-How did you find the parameters of your model? (What parameters have you searched over, cross validation procedure, $\ldots$)
+I used the following parameters, found in 3-fold cross-validation parameter search (in brackets [] are the parameter values I searched over (all combinations)):
 
-\section{Lessons Learned} What other algorithms, tools or methods did you try out that didn't work well?
-Why do you think they performed worse than what you used for your final submission?
+\begin{itemize}
+	\item Number of trees in forest: 40 [20, 40, 60, 80, 100, 200]
+	\item Maximum number of features to consider at each split: 2 [1, 2, 3, 4]
+	\item Minimum number of samples required to split an internal node: 5 [1, 3, 5]
+\end{itemize}
 
-I also tried SVMs with different kernels (RBF, polynomial, linear) but they were all beat by Random Forest in cross-validated parameter searches.
+\section{Lessons Learned}
+
+I also tried SVMs with different kernels (RBF, polynomial, linear) but they were all beat by Random Forest in cross-validated parameter searches. It was a surprise to me that even in a quite extensive parameter sweep, SVMs with all kernels I tried were inferior to Random Forests -- I would have expected SVMs to be able to learn the nonlinearities better.
+
+A hypothesis: the inferiority of SVMs may be caused by the larger sensitivity of SVMs to the lack of normalisation. However, I tested two kinds of normalising for both SVMs and Random Forests and the prediction performance of SVMs still did not improve.
 
 \end{document}
