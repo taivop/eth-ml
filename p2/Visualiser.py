@@ -47,7 +47,7 @@ class Visualiser:
     @staticmethod
     def plot_failures(features, labels, errors):
         """Do dimension reduction to 2 dimensions with t-SNE and plot the result."""
-        model = TSNE(n_components=2, random_state=0)
+        model = TSNE(n_components=2, random_state=0, init="pca", metric="correlation")
         transformed = model.fit_transform(features)
         errors = map(lambda x: 30 if x else 10, errors)
 
@@ -59,7 +59,7 @@ class Visualiser:
         colors = labels
         areas = errors
 
-        plt.scatter(x, y, c=colors, s=areas)
+        plt.scatter(x, y, c=colors, s=areas, edgecolors='none')
         plt.xlabel("t-SNE component 1")
         plt.ylabel("t-SNE component 2")
         plt.show()

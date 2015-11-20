@@ -17,35 +17,42 @@
 
 \renewcommand{\familydefault}{\sfdefault}
 
-\title{Machine Learning 2014: Project 1 - Regression Report}
-\author{member1@student.ethz.ch\\ member2@student.ethz.ch\\ member3@student.ethz.ch\\}
+\title{Machine Learning 2015: Project 2 - Regression Report}
+\author{pungast@student.ethz.ch\\}
 \date{\today}
 
 \begin{document}
 \maketitle
 
 \section*{Experimental Protocol}
-Suppose that someone wants to reproduce your results. Briefly describe the steps used to obtain the
-predictions starting from the raw data set downloaded from the project website. Use the following
-sections to explain your methodology. Feel free to add graphs or screenshots if you think it's
-necessary. The report should contain a maximum of 2 pages.
+I added nonlinear features to the original features and used a Random Forest classifier to predict the 3 classes.
 
 \section{Tools}
-Which tools and libraries have you used (e.g. Matlab, Python with scikit-learn, Java with Weka,
-SPSS, language x with library y, $\ldots$). If you have source-code (Matlab scripts, Python scripts, Java source folder, \dots),
-make sure to submit it on the project website together with this report. If you only used
-command-line or GUI-tools describe what you did.
+I used Python with scikit-learn 0.17. Source code is attached to the submission.
 
 \section{Algorithm}
-Describe the algorithm you used for regression (e.g. ordinary least squares, ridge regression, $\ldots$)
+I used Random Forest with (max_depth=None, max_features=2, min_samples_split=5, n_estimators=40
 
 \section{Features}
-Did you construct any new features? What feature transforms did you use?
+I added the following new features, for each feature x: $log x$, $x log x$, $\sqrt{x}$, $x^3$, $x^4$ and all second-order polynomial combinations of features.
+
+I did not normalise the data because it turned out that neither row-max normalising (dividing all features of each datapoint by the maximum dimension) or column-max normalising (diving all i-th feature values with the maximum i-th feature over all datapoints) improved prediction accuracy in cross-validation.
+
+For visualising the data (for debugging and getting an overview of the data) I used the t-SNE algorithm to map the datapoints into 2 dimensions so that locality information would be conserved. The result is depicted in Figure~\ref{fig:tsne} and shows that the datapoints are quite well linearly separable even in the 2-dimensional space resulting from applying t-SNE.
+
+\begin{figure}[h]
+	\label{fig:tsne}
+	\begin{center}
+	\includegraphics[width=\textwidth]{failures1}
+	\end{center}
+\end{figure}
 
 \section{Parameters}
 How did you find the parameters of your model? (What parameters have you searched over, cross validation procedure, $\ldots$)
 
 \section{Lessons Learned} What other algorithms, tools or methods did you try out that didn't work well?
 Why do you think they performed worse than what you used for your final submission?
+
+I also tried SVMs with different kernels (RBF, polynomial, linear) but they were all beat by Random Forest in cross-validated parameter searches.
 
 \end{document}

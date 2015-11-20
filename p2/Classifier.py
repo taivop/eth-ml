@@ -27,17 +27,14 @@ class Classifier:
         self.train_labels.shape = self.train_labels.shape[0]
 
         # Normalise
-        #self.train_features = self.normalise(self.train_features)
-        #self.train_features = sklearn.preprocessing.normalize(self.train_features, axis=0)
+        self.train_features = self.normalise(self.train_features)
 
         # Add nonlinear features
         self.train_features = self.add_nonlinear_features(self.train_features)
 
-        #Visualiser.tSNE_plot2(self.train_features, self.train_labels)
-
     def normalise(self, X):
         """Return normalised feature matrix."""
-        norm_col = np.mean(X, axis=1)
+        norm_col = np.max(X, axis=1)
         norm_col.shape = (X.shape[0], 1)
         norm_mat = np.repeat(norm_col, X.shape[1], axis=1)
         return X / norm_mat
@@ -63,11 +60,11 @@ class Classifier:
         """Do a grid search on a bunch of parameters."""
         parameters = {
                       'C': [1, 10, 100, 1000, 1e4],
-                      'gamma': [1e-5, 1e-4, 0.001, 0.01, 0.1],
+                      'gamma': [1e-5, 1e-4, 0.001, 0.01,  0.1],
                       #'degree': [2, 3]
         }
         svr = sklearn.svm.SVC(kernel='rbf')
-        clf = sklearn.grid_search.GridSearchCV(svr, parameters, cv=3, verbose=1, n_jobs=4)
+        clf = sklearn.grid_search.GridSearchCV(svr, parameters, cv=6, verbose=1, n_jobs=4)
         clf.fit(self.train_features, self.train_labels)
 
         for score in clf.grid_scores_:
@@ -159,8 +156,8 @@ class Classifier:
         X_train, X_test, y_train, y_test = sklearn.cross_validation.train_test_split(
             self.train_features, self.train_labels, test_size=0.6, random_state=0)
 
-        gamma_modifier = 1
-        model = sklearn.svm.SVC(kernel="rbf", C=1000)
+        # model = RandomForestClassifier(max_depth=None, max_features=2, min_samples_split=5, n_estimators=40)
+        model = sklearn.svm.SVC(kernel="rbf", C=10, gamma=0.1)
         model.fit(X_train, y_train)
 
         train_predictions = model.predict(X_train)
@@ -171,7 +168,7 @@ class Classifier:
               (self.accuracy(y_test, test_predictions), self.accuracy(y_train, train_predictions)))
         Visualiser.plot_failures(X_test, y_test, failures)
 
-Classifier('data/train.csv').run()
-# Classifier('data/train.csv').plot_failures()
+# Classifier('data/train.csv').run()
+Classifier('data/train.csv').plot_failures()
 # Classifier('data/train.csv').grid()
 # Classifier('data/train.csv').grid_bag()
