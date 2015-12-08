@@ -1,0 +1,31 @@
+Running extract_features.m will generate the matrix training_data with 890 
+rows (each of which refers to one training sample) and 698 columns whose 
+meaning is the following:
+[sample_id, features(col 2 to 697), sample_label].
+
+Tweaking this script, using as input the data set csv you are going to be
+evaluated on, you will be able to generate the exact same matrix also for
+the validation and test set.
+
+File List in this folder: 
+
+- extract_features.m:  Matlab script to generate initial features. 
+
+- process_image.m: Computes the features for a single image.
+
+(The above two files are the ones you want to look into for adding new features.)
+
+- DIPUMToolboxV1.1.3:  the matlab toolbox with the book: Rafael C Gonzalez,
+Richard Eugene Woods, and Steven L Eddins. Digital image processing using
+MATLAB.
+Pearson Education India, 2004.
+
+- images/  containing all the raw data for 1272 nuclei
+
+- train_labels.csv    containing labels for the training data, [sample_id, sample_label]
+
+- PHOG/   functions used for PHOG feature extraction.
+
+- sig_1D_signature.m  function used to generate the 1D signature
+
+- README    this readme file. 
